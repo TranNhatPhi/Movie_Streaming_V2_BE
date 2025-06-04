@@ -11,7 +11,7 @@ const options = {
         },
         servers: [
             {
-                url: "http://localhost:5000",
+                url: "https://movie-streaming-v2-be.onrender.com",
                 description: "Local server"
             }
         ],
@@ -303,9 +303,9 @@ const options = {
                                             data: {
                                                 type: "object",
                                                 properties: {
-                                                    isFavorite: { 
+                                                    isFavorite: {
                                                         type: "boolean",
-                                                        description: "True nếu phim nằm trong danh sách yêu thích, ngược lại là false" 
+                                                        description: "True nếu phim nằm trong danh sách yêu thích, ngược lại là false"
                                                     }
                                                 }
                                             },

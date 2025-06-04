@@ -20,7 +20,7 @@ const historyRoutes = require("./routes/histories");
 const authRoutes = require("./routes/auth");
 const searchRoutes = require('./routes/search');
 const searchHistoryRoutes = require('./routes/searchHistory');
-const userStatsRoutes = require('./routes/userStatsRoutes'); 
+const userStatsRoutes = require('./routes/userStatsRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes'); // Kích hoạt route subscription
 // admin
 const adminMovieRoutes = require("./routes/adminMovieRoutes");
@@ -37,7 +37,7 @@ const bulkEmailRoutes = require('./routes/bulkEmailRoutes');
 
 dotenv.config();
 const app = express();
-const movieViewRoutes = require('./routes/movieViewRoutes'); 
+const movieViewRoutes = require('./routes/movieViewRoutes');
 const favoritesRoutes = require('./routes/favorites');
 const likesRoutes = require('./routes/likes');
 const watchlistRoutes = require('./routes/watchlist');
@@ -70,14 +70,14 @@ app.use((req, res, next) => {
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api", movieRoutes);   
+app.use("/api", movieRoutes);
 app.use('/api', movieCrawlRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/ratings', ratingRoutes);
-app.use('/api/history', historyRoutes); 
+app.use('/api/history', historyRoutes);
 app.use('/api/histories', historyRoutes);
 app.use('/api/search', searchRoutes);
-app.use('/api/search-history', searchHistoryRoutes); 
+app.use('/api/search-history', searchHistoryRoutes);
 app.use('/api/movie-views', movieViewRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/likes', likesRoutes);
@@ -93,7 +93,7 @@ app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/notifications", notificationEmailRoutes); // Thêm route gửi thông báo email
 app.use("/api/admin/notifications", bulkEmailRoutes); // Thêm route gửi email hàng loạt
 // Đăng ký các routes cho feedback
-app.use("/api/admin/feedback", feedbackRoutes); 
+app.use("/api/admin/feedback", feedbackRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/user-stats", userStatsRoutes);
 app.use('/api/reports', reportRoutes); // Thêm route cho báo cáo
@@ -107,76 +107,76 @@ app.get('/api/health-check', (req, res) => {
 // --- Hàm khởi động Server ---
 async function startServer() {
   try {
-      // 🟢 Kết nối MongoDB
-      await connectDB();
-      console.log("✅ MongoDB connected successfully");
+    // 🟢 Kết nối MongoDB
+    await connectDB();
+    console.log("✅ MongoDB connected successfully");
 
-      // 🟢 Khởi tạo Elasticsearch Client
-      await initElasticsearchClient();
-      console.log("✅ Elasticsearch client initialized");
+    // 🟢 Khởi tạo Elasticsearch Client
+    await initElasticsearchClient();
+    console.log("✅ Elasticsearch client initialized");
 
-      // 🟢 Kiểm tra cấu hình email
-      const { verifyEmailConfig } = require('./config/email');
-      const emailConfigOk = await verifyEmailConfig();
-      if (emailConfigOk) {
-          console.log("✅ Email service configured successfully");
-      } else {
-          console.warn("⚠️ Email service not configured correctly. Email notifications may not work.");
+    // 🟢 Kiểm tra cấu hình email
+    const { verifyEmailConfig } = require('./config/email');
+    const emailConfigOk = await verifyEmailConfig();
+    if (emailConfigOk) {
+      console.log("✅ Email service configured successfully");
+    } else {
+      console.warn("⚠️ Email service not configured correctly. Email notifications may not work.");
+    }
+
+    // 🟢 Kích hoạt Swagger Docs
+    swaggerDocs(app);
+
+    // 🟢 Thiết lập Cron Jobs
+    setupCronJobs();
+    console.log("✅ Cron jobs setup completed");
+
+    // 🟢 Khởi động server Express với Socket.IO
+    const PORT = process.env.PORT || 5000;
+    const server = http.createServer(app);
+
+    // Khởi tạo Socket.IO
+    const io = new Server(server, {
+      cors: {
+        origin: ['http://localhost:3000', 'http://localhost:5000', 'https://movie-streaming-v2-be.onrender.com', '*'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+        credentials: true
       }
+    });
 
-      // 🟢 Kích hoạt Swagger Docs
-      swaggerDocs(app);
+    // Xử lý kết nối Socket.IO
+    io.on('connection', (socket) => {
+      console.log('🔌 New client connected:', socket.id);
 
-      // 🟢 Thiết lập Cron Jobs
-      setupCronJobs();
-      console.log("✅ Cron jobs setup completed");
+      // Lắng nghe sự kiện adminDataUpdate từ client
+      socket.on('adminDataUpdate', (data) => {
+        console.log('📊 Admin data updated:', data);
+        // Gửi sự kiện đến tất cả clients đang kết nối
+        io.emit('dashboardUpdate', { type: data.type, message: 'Dashboard data updated' });
+      });
 
-      // 🟢 Khởi động server Express với Socket.IO
-      const PORT = process.env.PORT || 5000;
-      const server = http.createServer(app);
-      
-      // Khởi tạo Socket.IO
-      const io = new Server(server, {
-          cors: {
-              origin: ['http://localhost:3000', 'http://localhost:5000', '*'],
-              methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-              credentials: true
-          }
+      // Xử lý khi client ngắt kết nối
+      socket.on('disconnect', () => {
+        console.log('🔌 Client disconnected:', socket.id);
       });
-      
-      // Xử lý kết nối Socket.IO
-      io.on('connection', (socket) => {
-          console.log('🔌 New client connected:', socket.id);
-          
-          // Lắng nghe sự kiện adminDataUpdate từ client
-          socket.on('adminDataUpdate', (data) => {
-              console.log('📊 Admin data updated:', data);
-              // Gửi sự kiện đến tất cả clients đang kết nối
-              io.emit('dashboardUpdate', { type: data.type, message: 'Dashboard data updated' });
-          });
-          
-          // Xử lý khi client ngắt kết nối
-          socket.on('disconnect', () => {
-              console.log('🔌 Client disconnected:', socket.id);
-          });
-      });
-      
-      // Lưu io vào app để có thể sử dụng ở các routes
-      app.set('io', io);
-      
-      // Thiết lập WebSocket riêng cho đồng bộ dữ liệu
-      const wsInstance = setupWebSocket(server);
-      app.set('websocket', wsInstance);
-      console.log('🔌 WebSocket server đã được thiết lập thành công');
-      
-      server.listen(PORT, () => {
-          console.log(`🚀 Server đang chạy trên cổng ${PORT}`);
-          console.log(`🔌 Socket.IO đã sẵn sàng nhận kết nối`);
-      });
+    });
+
+    // Lưu io vào app để có thể sử dụng ở các routes
+    app.set('io', io);
+
+    // Thiết lập WebSocket riêng cho đồng bộ dữ liệu
+    const wsInstance = setupWebSocket(server);
+    app.set('websocket', wsInstance);
+    console.log('🔌 WebSocket server đã được thiết lập thành công');
+
+    server.listen(PORT, () => {
+      console.log(`🚀 Server đang chạy trên cổng ${PORT}`);
+      console.log(`🔌 Socket.IO đã sẵn sàng nhận kết nối`);
+    });
 
   } catch (error) {
-      console.error("❌ Failed to start server:", error);
-      process.exit(1); // Thoát ứng dụng nếu không khởi động được DB hoặc ES
+    console.error("❌ Failed to start server:", error);
+    process.exit(1); // Thoát ứng dụng nếu không khởi động được DB hoặc ES
   }
 }
 
