@@ -138,7 +138,7 @@ async function startServer() {
     // Khởi tạo Socket.IO
     const io = new Server(server, {
       cors: {
-        origin: ['http://localhost:3000', 'http://localhost:5000', 'https://movie-streaming-v2-be.onrender.com', '*'],
+        origin: ['http://localhost:3000', 'http://localhost:5000', 'https://movie-streaming-v2-be.onrender.com', 'https://phimhaytnp.io.vn', '*'],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         credentials: true
       }
